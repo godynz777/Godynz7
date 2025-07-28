@@ -1,0 +1,101 @@
+then
+        UpdateESP()
+    else
+        local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ESPEnabled = true
+local PanelVisible = true
+
+local BeastColor = Color3.fromRGB(255, 0, 0)    -- Vermelho
+local ComputerColor = Color3.fromRGB(0, 162, 255) -- Azul
+
+-- Criar ScreenGui e interface (igual ao anterior, por brevidade vou pular aqui, assuma que é igual)
+
+-- (Aqui você pode copiar a parte da interface do script anterior)
+
+-- Função para criar ESP, que só cria se a adornee for válida
+local function CreateESP(parent, text, color)
+    if not parent or not parent:IsA("BasePart") then return end
+
+    -- Remover ESP antigo, se existir
+    local existing = parent:FindFirstChild("ESPBillboard")
+    if existing then existing:Destroy() end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESPBillboard"
+    billboard.Adornee = parent
+    billboard.Size = UDim2.new(0, 150, 0, 40)
+    billboard.AlwaysOnTop = true
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color
+    label.TextStrokeColor3 = Color3.new(0,0,0)
+    label.TextStrokeTransparency = 0
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 18
+    label.Parent = billboard
+
+    return billboard
+end
+
+local function RemoveESPFromPart(part)
+    if not part then return end
+    local esp = part:FindFirstChild("ESPBillboard")
+    if esp then
+        esp:Destroy()
+    end
+end
+
+local function ClearAllESP()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            RemoveESPFromPart(obj)
+        end
+    end
+end
+
+local function UpdateESP()
+    if not ESPEnabled then
+        ClearAllESP()
+        return
+    end
+
+    -- Procurar Beast
+    local beast = workspace:FindFirstChild("Beast")
+    if beast then
+        -- Tenta achar o HumanoidRootPart do beast
+        local hrp = beast:FindFirstChild("HumanoidRootPart") or beast:FindFirstChildWhichIsA("BasePart")
+        if hrp then
+            CreateESP(hrp, "BEAST", BeastColor)
+        end
+    end
+
+    -- Procurar computadores - busca por partes que tenham "Computer" no nome (case insensitive)
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            if string.find(string.lower(obj.Name), "computer") then
+                CreateESP(obj, "COMPUTER", ComputerColor)
+            end
+        end
+    end
+end
+
+-- Atualizar ESP em cada frame
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        UpdateESP()
+    else
+        ClearAllESP()
+    end
+end)
+
