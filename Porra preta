@@ -1,0 +1,76 @@
+-- Função para aumentar a hitbox do HumanoidRootPart
+local function EnlargeHitbox(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = character.HumanoidRootPart
+    
+    -- Evitar criar múltiplos
+    if rootPart:FindFirstChild("HitboxSizeModifier") then return end
+    
+    -- Guardar tamanho original para possível reset (opcional)
+    local originalSize = rootPart.Size
+    local originalTransparency = rootPart.Transparency
+    
+    -- Criar objeto para modificar tamanho da hitbox
+    local modifier = Instance.new("BoxHandleAdornment")
+    modifier.Name = "HitboxSizeModifier"
+    modifier.Adornee = rootPart
+    modifier.AlwaysOnTop = true
+    modifier.ZIndex = 5
+    modifier.Size = Vector3.new(6, 6, 6) -- Tamanho maior que padrão (3x3x3 pode ser um pouco pequeno)
+    modifier.Transparency = 0.5
+    modifier.Color3 = Color3.fromRGB(255, 0, 0)
+    modifier.Parent = rootPart
+    
+    -- Opcional: aumentar tamanho real da peça (use com cuidado)
+    rootPart.Size = Vector3.new(3, 3, 3) -- Aumenta para 3x3x3 (padrão é algo tipo 2x2x1.5)
+    rootPart.Transparency = 0.3 -- Levemente translúcido para não atrapalhar
+    
+    -- Você pode salvar o originalSize para restaurar depois se quiser
+end
+
+-- Função para resetar hitbox ao desligar ESP ou sair do personagem
+local function ResetHitbox(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = character.HumanoidRootPart
+    
+    -- Restaurar tamanho original e transparência
+    rootPart.Size = Vector3.new(2, 2, 1.5)
+    rootPart.Transparency = 0
+    
+    local modifier = rootPart:FindFirstChild("HitboxSizeModifier")
+    if modifier then modifier:Destroy() end
+end
+
+-- Modificar loop atual do Gody Hub para incluir hitbox
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+RunService.RenderStepped:Connect(function()
+    if not Config.ESPEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                -- Remover highlight e resetar hitbox
+                local hl = player.Character:FindFirstChild("ESP_Highlight")
+                if hl then hl:Destroy() end
+                ResetHitbox(player.Character)
+            end
+        end
+        return
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            if Config.TeamCheck and player.Team == LocalPlayer.Team then
+                -- Se time igual, resetar e ignorar
+                ResetHitbox(player.Character)
+                local hl = player.Character:FindFirstChild("ESP_Highlight")
+                if hl then hl:Destroy() end
+            else
+                -- Aplicar highlight e aumentar hitbox
+                ApplyHighlight(player)
+                EnlargeHitbox(player.Character)
+            end
+        end
+    end
+end)
