@@ -1,0 +1,152 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+screenGui.Name = "SimpleTbaoESP"
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 240, 0, 180)
+mainFrame.Position = UDim2.new(0, 20, 0, 100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 75)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Name = "MainFrame"
+
+local uICorner = Instance.new("UICorner", mainFrame)
+uICorner.CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", mainFrame)
+title.Text = "tBao ESP (Simples)"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(200, 150, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+
+-- Minimize Button
+local minimizeBtn = Instance.new("TextButton", mainFrame)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 150)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 24
+
+-- Toggle ESP Button
+local toggleBtn = Instance.new("TextButton", mainFrame)
+toggleBtn.Size = UDim2.new(0.8, 0, 0, 40)
+toggleBtn.Position = UDim2.new(0.1, 0, 0, 50)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+toggleBtn.Text = "ESP: OFF"
+
+-- Color Input Label
+local colorLabel = Instance.new("TextLabel", mainFrame)
+colorLabel.Text = "Cor ESP (R,G,B):"
+colorLabel.Size = UDim2.new(0.8, 0, 0, 20)
+colorLabel.Position = UDim2.new(0.1, 0, 0, 100)
+colorLabel.BackgroundTransparency = 1
+colorLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+colorLabel.Font = Enum.Font.Gotham
+colorLabel.TextSize = 14
+
+-- Color Input Box
+local colorBox = Instance.new("TextBox", mainFrame)
+colorBox.Size = UDim2.new(0.8, 0, 0, 30)
+colorBox.Position = UDim2.new(0.1, 0, 0, 125)
+colorBox.BackgroundColor3 = Color3.fromRGB(50, 0, 100)
+colorBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+colorBox.Font = Enum.Font.Code
+colorBox.TextSize = 14
+colorBox.Text = "255,0,0"
+
+-- Variables
+local ESPEnabled = false
+local ESPColor = Color3.fromRGB(255, 0, 0)
+local Highlights = {}
+
+-- Function to create ESP highlight
+local function CreateHighlight(player)
+	if player == LocalPlayer then return end
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	if Highlights[player] then
+		Highlights[player]:Destroy()
+		Highlights[player] = nil
+	end
+	
+	if ESPEnabled and player.Team ~= LocalPlayer.Team then
+		local hl = Instance.new("Highlight")
+		hl.Name = "SimpleESPHighlight"
+		hl.Adornee = char
+		hl.FillColor = ESPColor
+		hl.OutlineColor = Color3.new(1,1,1)
+		hl.FillTransparency = 0.5
+		hl.OutlineTransparency = 0
+		hl.Parent = char
+		Highlights[player] = hl
+	end
+end
+
+-- Update all players ESP
+local function UpdateESP()
+	for _, player in pairs(Players:GetPlayers()) do
+		CreateHighlight(player)
+	end
+end
+
+-- Toggle ESP Button logic
+toggleBtn.MouseButton1Click:Connect(function()
+	ESPEnabled = not ESPEnabled
+	toggleBtn.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
+	if not ESPEnabled then
+		for _, hl in pairs(Highlights) do
+			if hl then hl:Destroy() end
+		end
+		Highlights = {}
+	else
+		UpdateESP()
+	end
+end)
+
+-- Color Input logic
+colorBox.FocusLost:Connect(function()
+	local r,g,b = string.match(colorBox.Text, "(%d+),(%d+),(%d+)")
+	if r and g and b then
+		local nr, ng, nb = tonumber(r), tonumber(g), tonumber(b)
+		if nr and ng and nb and nr<=255 and ng<=255 and nb<=255 then
+			ESPColor = Color3.fromRGB(nr, ng, nb)
+			if ESPEnabled then
+				UpdateESP()
+			end
+		end
+	end
+end)
+
+-- Minimize Button logic
+minimizeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Update ESP on new players or respawns
+Players.PlayerAdded:Connect(function(plr)
+	plr.CharacterAdded:Connect(function()
+		wait(1)
+		if ESPEnabled then
+			CreateHighlight(plr)
+		end
+	end)
+end)
+
+-- Run a loop to update ESP every 2 seconds to catch changes
+RunService.Heartbeat:Connect(function()
+	if ESPEnabled then
+		UpdateESP()
+	end
+end)
