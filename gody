@@ -1,0 +1,56 @@
+-- Gody Hub - Hitbox Only (Estilo Tbao Hub)
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local Settings = {
+    HitboxSize = 6,
+    Enabled = true
+}
+
+local Window = Rayfield:CreateWindow({
+    Name = "🎯 Gody Hub - Hitbox Only",
+    LoadingTitle = "Carregando Gody Hub",
+    LoadingSubtitle = "By ChatGPT",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = { Enabled = false },
+    KeySystem = false,
+})
+
+local Tab = Window:CreateTab("Hitbox", 4483362458)
+
+Tab:CreateToggle({
+    Name = "Ativar Hitbox",
+    CurrentValue = true,
+    Callback = function(value)
+        Settings.Enabled = value
+    end,
+})
+
+Tab:CreateSlider({
+    Name = "Tamanho da Hitbox",
+    Range = {2, 35},
+    Increment = 1,
+    Suffix = "Studs",
+    CurrentValue = Settings.HitboxSize,
+    Callback = function(value)
+        Settings.HitboxSize = value
+    end,
+})
+
+-- Aplicar hitbox modificada
+local function ApplyHitbox(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- Verifica se já aplicou
+    if hrp.Size ~= Vector3.new(Settings.HitboxSize, Settings.HitboxSize, Settings.HitboxSize) then
+        hrp.Size = Vector3.new(Settings.HitboxSize, Settings.HitboxSize, Settings.HitboxSize)
+        hrp.Transparency = 0.6
+        hrp.Material = Enum.Material.Neon
+        hrp.Color
