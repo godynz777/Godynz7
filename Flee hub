@@ -1,0 +1,132 @@
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "ESP_UI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 220, 0, 90)
+frame.Position = UDim2.new(0.05, 0, 0.05, 0)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+-- Estilo neon verde
+local stroke = Instance.new("UIStroke", frame)
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(0, 255, 0)
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, -30, 0, 30)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.Text = "ESP - Flee the Facility"
+title.TextColor3 = Color3.fromRGB(0, 255, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0, 25, 0, 25)
+close.Position = UDim2.new(1, -30, 0, 2)
+close.Text = "✕"
+close.TextColor3 = Color3.fromRGB(0, 255, 0)
+close.BackgroundTransparency = 1
+close.Font = Enum.Font.GothamBold
+close.TextSize = 18
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1, -10, 0, 40)
+toggle.Position = UDim2.new(0, 5, 0, 40)
+toggle.Text = "Desativar ESP"
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+toggle.Font = Enum.Font.Gotham
+toggle.TextSize = 14
+
+-- Função de ESP
+local ESP_ENABLED = true
+
+function createESP(target, color)
+	if not target:FindFirstChild("Head") then return end
+
+	local box = Instance.new("BoxHandleAdornment")
+	box.Name = "ESPBox"
+	box.Adornee = target
+	box.AlwaysOnTop = true
+	box.ZIndex = 5
+	box.Size = target:GetExtentsSize()
+	box.Color3 = color
+	box.Transparency = 0.7
+	box.Parent = target
+
+	local aura = Instance.new("ParticleEmitter")
+	aura.Name = "AuraEffect"
+	aura.LightEmission = 1
+	aura.Size = NumberSequence.new(3)
+	aura.Color = ColorSequence.new(color)
+	aura.Rate = 8
+	aura.Lifetime = NumberRange.new(1)
+	aura.Speed = NumberRange.new(0)
+	aura.Rotation = NumberRange.new(0, 360)
+	aura.RotSpeed = NumberRange.new(-50, 50)
+	aura.Parent = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head")
+end
+
+function clearESP()
+	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+		if player.Character then
+			local adorn = player.Character:FindFirstChild("ESPBox")
+			if adorn then adorn:Destroy() end
+			local aura = player.Character:FindFirstChild("AuraEffect")
+			if aura then aura:Destroy() end
+		end
+	end
+
+	for _, obj in pairs(workspace:GetChildren()) do
+		if obj:IsA("Model") and obj:FindFirstChild("ESPBox") then
+			obj.ESPBox:Destroy()
+		end
+		if obj:FindFirstChild("AuraEffect") then
+			obj.AuraEffect:Destroy()
+		end
+	end
+end
+
+-- Atualiza ESP
+function updateESP()
+	clearESP()
+	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local isBeast = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("BeastIcon")
+			if isBeast then
+				createESP(player.Character, Color3.fromRGB(255, 0, 0))
+			end
+		end
+	end
+
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name == "ComputerTable" and obj:FindFirstChild("Computer") then
+			createESP(obj, Color3.fromRGB(0, 170, 255))
+		end
+	end
+end
+
+toggle.MouseButton1Click:Connect(function()
+	ESP_ENABLED = not ESP_ENABLED
+	toggle.Text = ESP_ENABLED and "Desativar ESP" or "Ativar ESP"
+	if not ESP_ENABLED then
+		clearESP()
+	end
+end)
+
+-- Loop do ESP
+game:GetService("RunService").RenderStepped:Connect(function()
+	if ESP_ENABLED then
+		updateESP()
+	end
+end)
