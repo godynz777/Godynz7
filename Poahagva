@@ -1,0 +1,129 @@
+--// CONFIGURAÇÃO
+local highlight_esp = true
+local beast_color = Color3.fromRGB(255, 0, 0)
+local pc_color = Color3.fromRGB(0, 140, 255)
+
+--// GUI SETUP
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+ScreenGui.Name = "FleeESP"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 220, 0, 120)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+Frame.BorderColor3 = Color3.fromRGB(120, 0, 255)
+Frame.BorderSizePixel = 2
+Frame.Active = true
+Frame.Draggable = true
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, -30, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "ESP - Flee the Facility"
+Title.TextColor3 = Color3.fromRGB(0, 255, 0)
+Title.TextSize = 16
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseButton = Instance.new("TextButton", Frame)
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+CloseButton.Text = "✕"
+CloseButton.BackgroundColor3 = Color3.fromRGB(100, 0, 150)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 16
+CloseButton.BorderSizePixel = 0
+
+local ToggleButton = Instance.new("TextButton", Frame)
+ToggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.5, -10)
+ToggleButton.Text = "Desativar ESP"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Name = "ESPButton"
+
+local OpenButton = Instance.new("TextButton", ScreenGui)
+OpenButton.Size = UDim2.new(0, 30, 0, 30)
+OpenButton.Position = UDim2.new(0, 10, 0, 10)
+OpenButton.Text = "⮞"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
+OpenButton.Visible = false
+OpenButton.BorderSizePixel = 0
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.TextSize = 20
+
+--// ESP FUNCTION
+local espActive = true
+local function createAura(target, color)
+	if target:FindFirstChild("ESP_HIGHLIGHT") then return end
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ESP_HIGHLIGHT"
+	highlight.FillColor = color
+	highlight.OutlineColor = Color3.new(0, 0, 0)
+	highlight.FillTransparency = 0.5
+	highlight.OutlineTransparency = 0.3
+	highlight.Adornee = target
+	highlight.Parent = target
+end
+
+local function clearESP()
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		if player.Character and player.Character:FindFirstChild("ESP_HIGHLIGHT") then
+			player.Character.ESP_HIGHLIGHT:Destroy()
+		end
+	end
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj:FindFirstChild("ESP_HIGHLIGHT") then
+			obj.ESP_HIGHLIGHT:Destroy()
+		end
+	end
+end
+
+local function updateESP()
+	while task.wait(1) do
+		if not espActive then continue end
+
+		-- Beast ESP
+		for _, player in ipairs(game.Players:GetPlayers()) do
+			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+				local tag = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("GameTag")
+				if tag and tag.Text == "BEAST" then
+					createAura(player.Character, beast_color)
+				end
+			end
+		end
+
+		-- Computadores ESP
+		for _, pc in ipairs(workspace:GetDescendants()) do
+			if pc.Name == "ComputerTable" and pc:IsA("Model") and pc:FindFirstChild("Main") then
+				createAura(pc, pc_color)
+			end
+		end
+	end
+end
+
+task.spawn(updateESP)
+
+--// BUTTONS FUNCTIONALITY
+ToggleButton.MouseButton1Click:Connect(function()
+	espActive = not espActive
+	ToggleButton.Text = espActive and "Desativar ESP" or "Ativar ESP"
+	ToggleButton.BackgroundColor3 = espActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 50, 50)
+	if not espActive then clearESP() end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+	Frame.Visible = false
+	OpenButton.Visible = true
+end)
+
+OpenButton.MouseButton1Click:Connect(function()
+	Frame.Visible = true
+	OpenButton.Visible = false
+end)
