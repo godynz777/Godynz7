@@ -1,0 +1,78 @@
+-- ✅ Configurações
+local cooldownDelay = 0.35 -- ⏱ Tempo mínimo entre tiros (ajuste aqui)
+local aimAssist = false -- Desative SilentAim se não estiver testando
+
+-- ✅ Serviços
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local shootEvent = ReplicatedStorage:WaitForChild("ShootEvent")
+
+-- ✅ Proteção contra kick: controle de tempo
+local lastShotTime = 0
+
+-- ✅ Interface simples para controle
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 90)
+Frame.Position = UDim2.new(0, 10, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
+
+local TextLabel = Instance.new("TextLabel", Frame)
+TextLabel.Size = UDim2.new(1, 0, 0.4, 0)
+TextLabel.Text = "NoCooldown Ativado"
+TextLabel.TextColor3 = Color3.new(1, 1, 1)
+TextLabel.BackgroundTransparency = 1
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.TextSize = 16
+
+local Slider = Instance.new("TextBox", Frame)
+Slider.Size = UDim2.new(1, -20, 0.3, 0)
+Slider.Position = UDim2.new(0, 10, 0.45, 0)
+Slider.Text = tostring(cooldownDelay)
+Slider.ClearTextOnFocus = false
+Slider.TextColor3 = Color3.new(1,1,1)
+Slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+Slider.Font = Enum.Font.SourceSans
+Slider.TextSize = 14
+
+local Info = Instance.new("TextLabel", Frame)
+Info.Size = UDim2.new(1, 0, 0.3, 0)
+Info.Position = UDim2.new(0, 0, 0.8, 0)
+Info.Text = "Delay entre tiros (seg)"
+Info.TextColor3 = Color3.fromRGB(200,200,200)
+Info.BackgroundTransparency = 1
+Info.TextSize = 12
+Info.Font = Enum.Font.SourceSansItalic
+
+-- Atualiza delay se valor for alterado na caixa de texto
+Slider.FocusLost:Connect(function()
+	local val = tonumber(Slider.Text)
+	if val and val >= 0.1 and val <= 1 then
+		cooldownDelay = val
+		Slider.Text = tostring(val)
+	else
+		Slider.Text = tostring(cooldownDelay)
+	end
+end)
+
+-- ✅ Tiro manual com delay
+task.spawn(function()
+	while true do
+		task.wait(0.01)
+		if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+			local now = tick()
+			if now - lastShotTime >= cooldownDelay then
+				lastShotTime = now
+				local pos = Mouse.Hit and Mouse.Hit.Position or nil
+				if pos then
+					pcall(function()
+						shootEvent:FireServer(pos)
+					end)
+				end
+			end
+		end
+	end
+end)
