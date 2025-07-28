@@ -1,0 +1,61 @@
+-- BoxESP com hitbox roxa para Roblox
+-- Por segurança e fins de teste autorizados
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- UI Toggle
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "ESPBoxUI"
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 150, 0, 40)
+ToggleButton.Position = UDim2.new(0, 20, 0, 70)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+ToggleButton.Text = "Box ESP: ON"
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.Parent = ScreenGui
+
+local espEnabled = true
+
+ToggleButton.MouseButton1Click:Connect(function()
+	espEnabled = not espEnabled
+	ToggleButton.Text = "Box ESP: " .. (espEnabled and "ON" or "OFF")
+end)
+
+-- Criar BoxESP (Highlight roxo) para um player
+local function addHighlight(player)
+	if player == LocalPlayer then return end
+	if player.Team == LocalPlayer.Team then return end
+	if not player.Character or player.Character:FindFirstChildOfClass("Highlight") then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = Color3.fromRGB(170, 0, 255) -- roxo
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.6
+	highlight.OutlineTransparency = 0.1
+	highlight.Adornee = player.Character
+	highlight.Name = "ESP_Highlight"
+	highlight.Parent = player.Character
+end
+
+-- Remover BoxESP
+local function removeHighlight(player)
+	if player.Character and player.Character:FindFirstChild("ESP_Highlight") then
+		player.Character.ESP_Highlight:Destroy()
+	end
+end
+
+-- Atualizar constantemente
+RunService.RenderStepped:Connect(function()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character then
+			if espEnabled then
+				addHighlight(player)
+			else
+				removeHighlight(player)
+			end
+		end
+	end
+end)
