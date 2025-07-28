@@ -1,0 +1,95 @@
+-- ▼ CONFIG INICIAL
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ▼ CRIAR INTERFACE
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "ESP_UI"
+gui.ResetOnSpawn = false
+
+-- ▼ PAINEL PRINCIPAL
+local main = Instance.new("Frame", gui)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+main.BorderSizePixel = 0
+main.Position = UDim2.new(0, 100, 0, 100)
+main.Size = UDim2.new(0, 250, 0, 160)
+main.Active = true
+main.Draggable = true
+
+local uicorner = Instance.new("UICorner", main)
+uicorner.CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "ESP Flee The Facility"
+title.TextColor3 = Color3.fromRGB(170, 85, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+-- ▼ BOTÃO FECHAR
+local close = Instance.new("TextButton", main)
+close.Text = "✖"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -30, 0, 0)
+close.BackgroundColor3 = Color3.fromRGB(40, 0, 50)
+close.TextColor3 = Color3.fromRGB(200, 120, 255)
+local closeCorner = Instance.new("UICorner", close)
+closeCorner.CornerRadius = UDim.new(1, 0)
+
+close.MouseButton1Click:Connect(function()
+	main.Visible = false
+end)
+
+-- ▼ BOTÕES
+local function createButton(text, yPos)
+	local btn = Instance.new("TextButton", main)
+	btn.Size = UDim2.new(0.9, 0, 0, 30)
+	btn.Position = UDim2.new(0.05, 0, yPos, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 0, 50)
+	btn.TextColor3 = Color3.fromRGB(200, 120, 255)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.Text = text
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 6)
+	return btn
+end
+
+local beastBtn = createButton("Ativar ESP Beast 🔴", 0.3)
+local pcBtn = createButton("Ativar ESP Computadores 🔵", 0.55)
+
+-- ▼ ESP FUNÇÃO
+local function addHighlight(obj, color)
+	if obj:FindFirstChild("ESP_HL") then return end
+	local hl = Instance.new("Highlight", obj)
+	hl.Name = "ESP_HL"
+	hl.FillColor = color
+	hl.FillTransparency = 0.5
+	hl.OutlineColor = Color3.new(0, 0, 0)
+end
+
+-- ▼ ESP BEAST
+beastBtn.MouseButton1Click:Connect(function()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player:FindFirstChild("Backpack") then
+			local backpack = player.Backpack
+			local hasHammer = backpack:FindFirstChildWhichIsA("Tool") and backpack:FindFirstChildWhichIsA("Tool").Name == "Hammer"
+			if hasHammer and player.Character then
+				addHighlight(player.Character, Color3.new(1, 0, 0)) -- Vermelho
+			end
+		end
+	end
+end)
+
+-- ▼ ESP COMPUTADORES
+pcBtn.MouseButton1Click:Connect(function()
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name == "ComputerTable" then
+			addHighlight(obj, Color3.fromRGB(0, 170, 255)) -- Azul
+		end
+	end
+end)
