@@ -1,0 +1,93 @@
+-- ESP completo para Flee the Facility
+-- Aura roxa para jogadores, vermelha para Beast, azul para computadores
+-- Interface com botões separados
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Interface
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "ESP_UI_Flee"
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 200, 0, 130)
+Frame.Position = UDim2.new(0, 20, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local function createTitle(text, position)
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 30)
+	title.Position = position
+	title.BackgroundTransparency = 1
+	title.Text = text
+	title.TextColor3 = Color3.fromRGB(170, 0, 255)
+	title.Font = Enum.Font.GothamBold
+	title.TextScaled = true
+	title.Parent = Frame
+	return title
+end
+
+local function createButton(text, position)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0.9, 0, 0, 30)
+	button.Position = position
+	button.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
+	button.BorderSizePixel = 0
+	button.Text = text
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.Font = Enum.Font.Gotham
+	button.TextScaled = true
+	button.Parent = Frame
+	return button
+end
+
+-- Título
+createTitle("ESP MENU", UDim2.new(0, 0, 0, 0))
+
+-- Botões
+local btnPlayerESP = createButton("Jogadores: ON", UDim2.new(0.05, 0, 0, 35))
+local btnBeastESP = createButton("Beast: ON", UDim2.new(0.05, 0, 0, 70))
+local btnComputerESP = createButton("Computadores: ON", UDim2.new(0.05, 0, 0, 105))
+
+local showPlayers = true
+local showBeast = true
+local showComputers = true
+
+btnPlayerESP.MouseButton1Click:Connect(function()
+	showPlayers = not showPlayers
+	btnPlayerESP.Text = "Jogadores: " .. (showPlayers and "ON" or "OFF")
+end)
+
+btnBeastESP.MouseButton1Click:Connect(function()
+	showBeast = not showBeast
+	btnBeastESP.Text = "Beast: " .. (showBeast and "ON" or "OFF")
+end)
+
+btnComputerESP.MouseButton1Click:Connect(function()
+	showComputers = not showComputers
+	btnComputerESP.Text = "Computadores: " .. (showComputers and "ON" or "OFF")
+end)
+
+-- Adicionar Highlight
+local function addHighlight(target, color, name)
+	if not target or target:FindFirstChild(name) then return end
+
+	local hl = Instance.new("Highlight")
+	hl.Name = name
+	hl.FillColor = color
+	hl.FillTransparency = 0.4
+	hl.OutlineColor = Color3.new(1, 1, 1)
+	hl.OutlineTransparency = 0.2
+	hl.Adornee = target
+	hl.Parent = target
+end
+
+-- Remover Highlight
+local function removeHighlight(target, name)
+	if target
