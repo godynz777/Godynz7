@@ -1,0 +1,173 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Configurações
+local ESPEnabled = true
+local PanelVisible = true
+
+-- Cores
+local BeastColor = Color3.fromRGB(255, 0, 0)    -- Vermelho
+local ComputerColor = Color3.fromRGB(0, 162, 255) -- Azul
+
+-- Criar ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FTF_ESPGui"
+ScreenGui.Parent = game.CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+
+-- Painel Neon Roxo
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 130)
+Frame.Position = UDim2.new(0.5, -110, 0.7, -65)
+Frame.BackgroundColor3 = Color3.fromRGB(85, 0, 127) -- Roxo escuro neon suave
+Frame.BackgroundTransparency = 0.3
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+Frame.Active = true
+Frame.Draggable = true
+
+-- Glow/neon efeito (contorno simples com UIStroke)
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.fromRGB(138, 43, 226) -- Roxo neon (blueviolet)
+uiStroke.Thickness = 3
+uiStroke.Parent = Frame
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Text = "ESP Flee the Facility"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(230, 230, 250) -- Lavender
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.Parent = Frame
+
+-- Botão de ligar/desligar ESP
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Text = "Desativar ESP"
+ToggleButton.Size = UDim2.new(1, -20, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0, 40)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
+ToggleButton.TextColor3 = Color3.new(1,1,1)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+ToggleButton.Parent = Frame
+
+-- Botão para esconder painel
+local HideButton = Instance.new("TextButton")
+HideButton.Text = "Esconder Painel (Q)"
+HideButton.Size = UDim2.new(1, -20, 0, 30)
+HideButton.Position = UDim2.new(0, 10, 0, 90)
+HideButton.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
+HideButton.TextColor3 = Color3.new(1,1,1)
+HideButton.Font = Enum.Font.Gotham
+HideButton.TextSize = 14
+HideButton.Parent = Frame
+
+-- Função para criar ESP (BillboardGui)
+local function CreateESP(parent, text, color)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESPBillboard"
+    billboard.Adornee = parent
+    billboard.Size = UDim2.new(0, 150, 0, 40)
+    billboard.AlwaysOnTop = true
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color
+    label.TextStrokeColor3 = Color3.new(0,0,0)
+    label.TextStrokeTransparency = 0
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 18
+    label.Parent = billboard
+
+    return billboard
+end
+
+-- Remover ESP existente para um objeto
+local function RemoveESP(parent)
+    for _, v in pairs(parent:GetChildren()) do
+        if v.Name == "ESPBillboard" then
+            v:Destroy()
+        end
+    end
+end
+
+-- Atualizar ESPs
+local function UpdateESP()
+    if not ESPEnabled then
+        -- Limpar tudo e parar
+        for _, obj in pairs(workspace:GetChildren()) do
+            RemoveESP(obj)
+        end
+        return
+    end
+
+    -- Beast (monstro)
+    local beast = workspace:FindFirstChild("Beast")
+    if beast and beast:FindFirstChild("HumanoidRootPart") then
+        RemoveESP(beast.HumanoidRootPart)
+        CreateESP(beast.HumanoidRootPart, "BEAST", BeastColor)
+    end
+
+    -- Computadores (normalmente modelos chamados "Computer" ou "Computers")
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name:lower():find("computer") and obj:IsA("Model") then
+            local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+            if root then
+                RemoveESP(root)
+                CreateESP(root, "COMPUTER", ComputerColor)
+            end
+        end
+    end
+end
+
+-- Atualiza ESP toda frame
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        UpdateESP()
+    else
+        -- Se desligado, limpa ESPs
+        for _, obj in pairs(workspace:GetChildren()) do
+            RemoveESP(obj)
+        end
+    end
+end)
+
+-- Toggle botão
+ToggleButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    if ESPEnabled then
+        ToggleButton.Text = "Desativar ESP"
+    else
+        ToggleButton.Text = "Ativar ESP"
+        -- Limpar ESP
+        for _, obj in pairs(workspace:GetChildren()) do
+            RemoveESP(obj)
+        end
+    end
+end)
+
+-- Esconder painel com botão no painel
+HideButton.MouseButton1Click:Connect(function()
+    PanelVisible = not PanelVisible
+    Frame.Visible = PanelVisible
+end)
+
+-- Ouvir tecla Q para esconder/mostrar painel
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        if input.KeyCode == Enum.KeyCode.Q then
+            PanelVisible = not PanelVisible
+            Frame.Visible = PanelVisible
+        end
+    end
+end)
