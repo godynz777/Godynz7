@@ -1,0 +1,179 @@
+--// GUI Base
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local UIS = game:GetService("UserInputService")
+
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "CheatUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0, 10, 0.5, -150)
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.BorderSizePixel = 0
+
+local layout = Instance.new("UIListLayout", frame)
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Estado e Configurações
+local toggles = {
+	SilentAim = false,
+	AutoKill = false,
+	NoCooldown = false,
+	SpeedHack = false
+}
+
+local config = {
+	NoCooldownDelay = 0.1,
+	SpeedHackSpeed = 50
+}
+
+-- Funções GUI
+local function createToggle(name, callback)
+	local button = Instance.new("TextButton", frame)
+	button.Text = "Desativado - " .. name
+	button.Size = UDim2.new(1, -10, 0, 30)
+	button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.Font = Enum.Font.SourceSansBold
+	button.TextSize = 16
+	button.MouseButton1Click:Connect(function()
+		toggles[name] = not toggles[name]
+		button.Text = (toggles[name] and "Ativado - " or "Desativado - ") .. name
+		callback(toggles[name])
+	end)
+end
+
+local function createSlider(labelText, min, max, default, onChanged)
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, -10, 0, 20)
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 14
+	label.Text = labelText .. ": " .. default
+
+	local slider = Instance.new("TextBox", frame)
+	slider.Size = UDim2.new(1, -10, 0, 25)
+	slider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	slider.TextColor3 = Color3.new(1, 1, 1)
+	slider.Font = Enum.Font.SourceSans
+	slider.TextSize = 14
+	slider.Text = tostring(default)
+	slider.ClearTextOnFocus = false
+
+	slider.FocusLost:Connect(function()
+		local value = tonumber(slider.Text)
+		if value and value >= min and value <= max then
+			label.Text = labelText .. ": " .. value
+			onChanged(value)
+		else
+			slider.Text = tostring(default)
+		end
+	end)
+end
+
+-- Cheats
+
+-- SilentAim
+local function getClosestTarget()
+	local closest = nil
+	local shortest = math.huge
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Team ~= LocalPlayer.Team then
+			local char = plr.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local screenPos, onScreen = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position)
+				if onScreen then
+					local dist = (Vector2.new(screenPos.X, screenPos.Y) - UIS:GetMouseLocation()).Magnitude
+					if dist < shortest then
+						closest = char.HumanoidRootPart
+						shortest = dist
+					end
+				end
+			end
+		end
+	end
+	return closest
+end
+
+-- Hook no método do SilentAim
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local oldNamecall = mt.__namecall
+
+mt.__namecall = newcclosure(function(self, ...)
+	local args = { ... }
+	local method = getnamecallmethod()
+
+	if toggles.SilentAim and method == "FireServer" and tostring(self):lower():find("shoot") then
+		local target = getClosestTarget()
+		if target then
+			args[1] = target.Position
+		end
+	end
+
+	return oldNamecall(self, unpack(args))
+end)
+
+-- AutoKill
+task.spawn(function()
+	while task.wait(0.3) do
+		if toggles.AutoKill then
+			for _, plr in pairs(Players:GetPlayers()) do
+				if plr ~= LocalPlayer and plr.Team ~= LocalPlayer.Team then
+					local char = plr.Character
+					local myChar = LocalPlayer.Character
+					if char and myChar and char:FindFirstChild("HumanoidRootPart") and myChar:FindFirstChild("HumanoidRootPart") then
+						local target = char.HumanoidRootPart
+						local hrp = myChar.HumanoidRootPart
+						local oldPos = hrp.CFrame
+						hrp.CFrame = target.CFrame * CFrame.new(0, 0, -2)
+						task.wait(0.05)
+						hrp.CFrame = oldPos
+					end
+				end
+			end
+		end
+	end
+end)
+
+-- NoCooldown
+task.spawn(function()
+	while task.wait() do
+		if toggles.NoCooldown then
+			local mouse = LocalPlayer:GetMouse()
+			if mouse and mouse.Target then
+				local shoot = RS:FindFirstChild("ShootEvent")
+				if shoot then
+					shoot:FireServer(mouse.Hit.Position)
+				end
+			end
+			task.wait(config.NoCooldownDelay)
+		end
+	end
+end)
+
+-- SpeedHack
+task.spawn(function()
+	while task.wait() do
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChild("Humanoid") then
+			char.Humanoid.WalkSpeed = toggles.SpeedHack and config.SpeedHackSpeed or 16
+		end
+	end
+end)
+
+-- Interface
+createToggle("SilentAim", function() end)
+createToggle("AutoKill", function() end)
+createToggle("NoCooldown", function() end)
+createSlider("NoCooldown Delay (s)", 0.01, 1, config.NoCooldownDelay, function(v)
+	config.NoCooldownDelay = v
+end)
+createToggle("SpeedHack", function() end)
+createSlider("SpeedHack Speed", 16, 150, config.SpeedHackSpeed, function(v)
+	config.SpeedHackSpeed = v
+end)
