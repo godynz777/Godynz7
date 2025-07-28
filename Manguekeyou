@@ -1,0 +1,108 @@
+-- GUI Setup
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "FleeESP_GUI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 200, 0, 180)
+main.Position = UDim2.new(0, 20, 0.4, -90)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+main.BorderSizePixel = 0
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(150, 0, 255)
+stroke.Thickness = 2
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "FLEE ESP"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 0, 255)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+
+-- Toggle Status
+local beastESPEnabled = false
+local computerESPEnabled = false
+
+-- Highlight helper
+local function highlightTarget(target, color, name)
+    if target:FindFirstChild(name) then return end
+    local h = Instance.new("Highlight")
+    h.Name = name
+    h.FillColor = color
+    h.FillTransparency = 0.25
+    h.OutlineColor = Color3.new(0,0,0)
+    h.OutlineTransparency = 0.5
+    h.Adornee = target
+    h.Parent = target
+end
+
+local function removeHighlight(name)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("Part") then
+            local h = obj:FindFirstChild(name)
+            if h then h:Destroy() end
+        end
+    end
+end
+
+-- ESP Loops
+task.spawn(function()
+    while true do
+        if beastESPEnabled then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Hammer") then
+                    highlightTarget(player.Character, Color3.fromRGB(255, 0, 0), "BeastESP")
+                end
+            end
+        else
+            removeHighlight("BeastESP")
+        end
+
+        if computerESPEnabled then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj.Name == "ComputerTable" and obj:IsA("Model") then
+                    highlightTarget(obj, Color3.fromRGB(0, 140, 255), "CompESP")
+                end
+            end
+        else
+            removeHighlight("CompESP")
+        end
+
+        task.wait(1) -- Update rate
+    end
+end)
+
+-- Create toggle button
+local function makeToggle(name, yPos, stateRef, onColor)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextScaled = true
+    btn.Text = name .. ": OFF"
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    btn.MouseButton1Click:Connect(function()
+        _G[stateRef] = not _G[stateRef]
+        if _G[stateRef] then
+            btn.Text = name .. ": ON"
+            btn.BackgroundColor3 = onColor
+        else
+            btn.Text = name .. ": OFF"
+            btn.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+        end
+        if stateRef == "beastESPEnabled" then beastESPEnabled = _G[stateRef] end
+        if stateRef == "computerESPEnabled" then computerESPEnabled = _G[stateRef] end
+    end)
+end
+
+-- Criar botões de ativação/desativação
+makeToggle("ESP Beast 🔴", 40, "beastESPEnabled", Color3.fromRGB(150, 0, 0))
+makeToggle("ESP PCs 🔵", 90, "computerESPEnabled", Color3.fromRGB(0, 100, 200))
