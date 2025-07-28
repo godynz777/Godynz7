@@ -1,0 +1,70 @@
+-- Gody Hub ESP com Highlight, Team Check e Hitbox Ajustável (max 20)
+-- Interface estilo Tbao Hub com Rayfield
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "💜 Gody Hub",
+    LoadingTitle = "Carregando Gody Hub",
+    LoadingSubtitle = "By ChatGPT",
+    ConfigurationSaving = { Enabled = false },
+    Discord = { Enabled = false },
+    KeySystem = false,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local Config = {
+    ESPEnabled = true,
+    TeamCheck = true,
+    AuraColor = Color3.fromRGB(255, 0, 255),
+    HitboxSize = 6,
+}
+
+local ESPTab = Window:CreateTab("ESP")
+
+ESPTab:CreateToggle({
+    Name = "Ativar ESP",
+    CurrentValue = true,
+    Callback = function(value) Config.ESPEnabled = value end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Team Check",
+    CurrentValue = true,
+    Callback = function(value) Config.TeamCheck = value end,
+})
+
+ESPTab:CreateColorPicker({
+    Name = "Cor da Aura (Highlight)",
+    Color = Config.AuraColor,
+    Callback = function(color) Config.AuraColor = color end,
+})
+
+ESPTab:CreateSlider({
+    Name = "Tamanho da Hitbox",
+    Min = 1,
+    Max = 20,
+    Default = Config.HitboxSize,
+    Increment = 1,
+    Suffix = "",
+    Callback = function(value) Config.HitboxSize = value end,
+})
+
+-- Função para criar ou atualizar highlight
+local function UpdateHighlight(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    if player == LocalPlayer then return end
+    if Config.TeamCheck and player.Team == LocalPlayer.Team then
+        -- Remover highlight se time igual
+        local hl = player.Character:FindFirstChild("ESP_Highlight")
+        if hl then hl:Destroy() end
+        return
+    end
+
+    local highlight = player.Character:FindFirstChild("ESP_Highlight")
+    if not highlight then
+        highlight = Instance.new("Highlight", player.Character)
+        highlight.Name = "ESP_Highlight
