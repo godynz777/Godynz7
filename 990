@@ -1,0 +1,80 @@
+-- ESP Highlight universal para modelos com Humanoid
+-- Funciona com NPCs e jogadores personalizados
+
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- Interface
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "ESP_UI"
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 170, 0, 60)
+Frame.Position = UDim2.new(0, 20, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0.4, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ESP MENU"
+Title.TextColor3 = Color3.fromRGB(170, 0, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextScaled = true
+Title.Parent = Frame
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.9, 0, 0.4, 0)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.5, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = "ESP: ON"
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.Font = Enum.Font.Gotham
+ToggleButton.TextScaled = true
+ToggleButton.Parent = Frame
+
+local espEnabled = true
+
+ToggleButton.MouseButton1Click:Connect(function()
+	espEnabled = not espEnabled
+	ToggleButton.Text = "ESP: " .. (espEnabled and "ON" or "OFF")
+end)
+
+-- Destacar qualquer modelo com Humanoid
+local function applyESP(model)
+	if not model:FindFirstChild("Humanoid") then return end
+	if not model:FindFirstChild("HumanoidRootPart") then return end
+	if model:FindFirstChild("ESP_Highlight") then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ESP_Highlight"
+	highlight.FillColor = Color3.fromRGB(170, 0, 255)
+	highlight.FillTransparency = 0.5
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.OutlineTransparency = 0.2
+	highlight.Adornee = model
+	highlight.Parent = model
+end
+
+-- Limpar ESP
+local function removeESP(model)
+	local esp = model:FindFirstChild("ESP_Highlight")
+	if esp then esp:Destroy() end
+end
+
+-- Loop principal
+RunService.RenderStepped:Connect(function()
+	for _, model in ipairs(Workspace:GetChildren()) do
+		if model:IsA("Model") then
+			if espEnabled then
+				applyESP(model)
+			else
+				removeESP(model)
+			end
+		end
+	end
+end)
