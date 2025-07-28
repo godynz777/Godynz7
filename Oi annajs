@@ -1,0 +1,55 @@
+-- Interface estilo Tbao Hub com ESP personalizado
+-- Usa Rayfield UI Library (visual idêntico)
+
+-- Carregar Rayfield
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "💜 ESP Tbao Edition",
+    LoadingTitle = "Carregando ESP",
+    LoadingSubtitle = "By ChatGPT",
+    ConfigurationSaving = {
+       Enabled = false,
+    },
+    Discord = {
+       Enabled = false,
+    },
+    KeySystem = false,
+})
+
+-- Tabela de Configuração
+local Config = {
+    ESPEnabled = true,
+    TeamCheck = true,
+    Color = Color3.fromRGB(255, 0, 255),
+}
+
+-- Criar aba
+local ESPTab = Window:CreateTab("ESP", 4483362458)
+
+-- Toggle ESP Geral
+ESPTab:CreateToggle({
+    Name = "Ativar ESP",
+    CurrentValue = true,
+    Callback = function(Value)
+        Config.ESPEnabled = Value
+    end,
+})
+
+-- Toggle Team Check
+ESPTab:CreateToggle({
+    Name = "Team Check",
+    CurrentValue = true,
+    Callback = function(Value)
+        Config.TeamCheck = Value
+    end,
+})
+
+-- Seletor de Cor
+ESPTab:CreateColorPicker({
+    Name = "Cor da Aura (Highlight)",
+    Color = Config.Color,
+    Callback = function(color)
+        Config.Color = color
+    end,
+})
