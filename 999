@@ -1,0 +1,158 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Variáveis
+local ESPEnabled = true
+local PanelVisible = true
+
+-- CORES
+local BeastColor = Color3.fromRGB(255, 0, 0)
+local ComputerColor = Color3.fromRGB(0, 162, 255)
+
+-- INTERFACE
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ESP_UI"
+ScreenGui.Parent = game.CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 220, 0, 120)
+MainFrame.Position = UDim2.new(0.1, 0, 0.6, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(100, 0, 160)
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Neon Borda
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(170, 85, 255)
+Stroke.Thickness = 3
+Stroke.Transparency = 0.2
+Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+Stroke.Parent = MainFrame
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Text = "ESP - Flee the Facility"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(230, 230, 250)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+-- Botão ESP
+local ToggleESP = Instance.new("TextButton")
+ToggleESP.Text = "Desativar ESP"
+ToggleESP.Size = UDim2.new(1, -20, 0, 40)
+ToggleESP.Position = UDim2.new(0, 10, 0, 35)
+ToggleESP.BackgroundColor3 = Color3.fromRGB(60, 0, 100)
+ToggleESP.TextColor3 = Color3.new(1,1,1)
+ToggleESP.Font = Enum.Font.Gotham
+ToggleESP.TextSize = 16
+ToggleESP.Parent = MainFrame
+
+-- Botão "X" minimizar
+local CloseButton = Instance.new("TextButton")
+CloseButton.Text = "✕"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 0)
+CloseButton.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 20
+CloseButton.Parent = MainFrame
+
+-- Animação minimizar
+local Minimized = false
+local FullSize = UDim2.new(0, 220, 0, 120)
+local MinSize = UDim2.new(0, 220, 0, 30)
+
+CloseButton.MouseButton1Click:Connect(function()
+	Minimized = not Minimized
+	local goalSize = Minimized and MinSize or FullSize
+	local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(MainFrame, tweenInfo, {Size = goalSize}):Play()
+
+	for _, child in pairs(MainFrame:GetChildren()) do
+		if child ~= Title and child ~= CloseButton then
+			child.Visible = not Minimized
+		end
+	end
+end)
+
+-- ESP Functions
+local function CreateESP(part, text, color)
+	if part:FindFirstChild("ESPTag") then return end
+
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "ESPTag"
+	gui.Adornee = part
+	gui.Size = UDim2.new(0, 100, 0, 30)
+	gui.AlwaysOnTop = true
+	gui.StudsOffset = Vector3.new(0, 2.5, 0)
+	gui.Parent = part
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = color
+	label.TextStrokeColor3 = Color3.new(0, 0, 0)
+	label.TextStrokeTransparency = 0
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 16
+	label.Parent = gui
+end
+
+local function ClearESP()
+	for _, v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and v:FindFirstChild("ESPTag") then
+			v.ESPTag:Destroy()
+		end
+	end
+end
+
+local function UpdateESP()
+	if not ESPEnabled then ClearESP() return end
+
+	-- Beast (jogador com BeastIcon no PlayerGui)
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Character and player:FindFirstChild("PlayerGui") then
+			local isBeast = player.PlayerGui:FindFirstChild("BeastIcon")
+			if isBeast and player.Character:FindFirstChild("HumanoidRootPart") then
+				CreateESP(player.Character.HumanoidRootPart, "BEAST", BeastColor)
+			end
+		end
+	end
+
+	-- Computadores
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and string.lower(obj.Name):find("computer") then
+			local part = obj:FindFirstChildWhichIsA("BasePart")
+			if part then
+				CreateESP(part, "COMPUTER", ComputerColor)
+			end
+		end
+	end
+end
+
+-- Loop
+RunService.RenderStepped:Connect(function()
+	if ESPEnabled then
+		UpdateESP()
+	end
+end)
+
+-- Botão ESP
+ToggleESP.MouseButton1Click:Connect(function()
+	ESPEnabled = not ESPEnabled
+	ToggleESP.Text = ESPEnabled and "Desativar ESP" or "Ativar ESP"
+	if not ESPEnabled then ClearESP() end
+end)
