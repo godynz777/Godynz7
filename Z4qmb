@@ -1,0 +1,141 @@
+-- Gody Hub - ESP com Highlight e Hitbox Ajustável (max 20), cores separadas
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "💜 Gody Hub",
+    LoadingTitle = "Carregando Gody Hub",
+    LoadingSubtitle = "By ChatGPT",
+    ConfigurationSaving = {
+       Enabled = false,
+    },
+    Discord = {
+       Enabled = false,
+    },
+    KeySystem = false,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local Config = {
+    ESPEnabled = true,
+    TeamCheck = true,
+    AuraColor = Color3.fromRGB(255, 0, 255),
+    HitboxSize = 6, -- padrão inicial
+    HitboxColor = Color3.fromRGB(255, 0, 0), -- cor fixa vermelha
+}
+
+local ESPTab = Window:CreateTab("ESP", 4483362458)
+
+ESPTab:CreateToggle({
+    Name = "Ativar ESP",
+    CurrentValue = true,
+    Callback = function(value)
+        Config.ESPEnabled = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Team Check",
+    CurrentValue = true,
+    Callback = function(value)
+        Config.TeamCheck = value
+    end,
+})
+
+ESPTab:CreateColorPicker({
+    Name = "Cor da Aura (Highlight)",
+    Color = Config.AuraColor,
+    Callback = function(color)
+        Config.AuraColor = color
+    end,
+})
+
+ESPTab:CreateSlider({
+    Name = "Tamanho da Hitbox",
+    Min = 1,
+    Max = 20, -- máximo pra evitar glitches
+    Default = Config.HitboxSize,
+    Increment = 1,
+    Suffix = "",
+    Callback = function(value)
+        Config.HitboxSize = value
+    end,
+})
+
+local function ApplyHighlight(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    if player == LocalPlayer then return end
+    if Config.TeamCheck and player.Team == LocalPlayer.Team then return end
+
+    local char = player.Character
+    local highlight = char:FindFirstChild("ESP_Highlight")
+
+    if not highlight then
+        highlight = Instance.new("Highlight", char)
+        highlight.Name = "ESP_Highlight"
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0.2
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+    end
+    highlight.FillColor = Config.AuraColor
+end
+
+local function EnlargeHitbox(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = character.HumanoidRootPart
+
+    local modifier = rootPart:FindFirstChild("HitboxSizeModifier")
+
+    if modifier then
+        if modifier.Size.X ~= Config.HitboxSize then
+            modifier.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+        end
+        return
+    end
+
+    modifier = Instance.new("BoxHandleAdornment")
+    modifier.Name = "HitboxSizeModifier"
+    modifier.Adornee = rootPart
+    modifier.AlwaysOnTop = true
+    modifier.ZIndex = 5
+    modifier.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+    modifier.Transparency = 0.5
+    modifier.Color3 = Config.HitboxColor
+    modifier.Parent = rootPart
+end
+
+local function ResetHitbox(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = character.HumanoidRootPart
+
+    local modifier = rootPart:FindFirstChild("HitboxSizeModifier")
+    if modifier then modifier:Destroy() end
+end
+
+RunService.RenderStepped:Connect(function()
+    if not Config.ESPEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local hl = player.Character:FindFirstChild("ESP_Highlight")
+                if hl then hl:Destroy() end
+                ResetHitbox(player.Character)
+            end
+        end
+        return
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            if Config.TeamCheck and player.Team == LocalPlayer.Team then
+                ResetHitbox(player.Character)
+                local hl = player.Character:FindFirstChild("ESP_Highlight")
+                if hl then hl:Destroy() end
+            else
+                ApplyHighlight(player)
+                EnlargeHitbox(player.Character)
+            end
+        end
+    end
+end)
