@@ -1,0 +1,210 @@
+--[[
+✅ SCRIPT DE TESTES PARA ANTI-CHEAT
+🕹️ Jogo: Murderers vs Sheriffs Duels
+👨‍💻 Dev: Calebe (uso pessoal, não malicioso)
+--]]
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- GUI Base
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "TbaoLikeMenu"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 400, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 10)
+
+-- Título
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "Tbao Hub - Cheats (TESTE ANTI-CHEAT)"
+Title.TextColor3 = Color3.fromRGB(180, 0, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+-- Minimizar
+local MinBtn = Instance.new("TextButton", MainFrame)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -35, 0, 5)
+MinBtn.Text = "–"
+MinBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 18
+local minimized = false
+
+MinBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	for _,v in pairs(MainFrame:GetChildren()) do
+		if v ~= Title and v ~= MinBtn and v:IsA("GuiObject") then
+			v.Visible = not minimized
+		end
+	end
+end)
+
+-- Função para criar Toggles
+local function createToggle(name, parent, default, callback)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(1, -20, 0, 30)
+	btn.BackgroundColor3 = default and Color3.fromRGB(60, 0, 90) or Color3.fromRGB(40, 40, 40)
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.Text = name .. ": " .. (default and "ON" or "OFF")
+	btn.BorderSizePixel = 0
+
+	local state = default
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = name .. ": " .. (state and "ON" or "OFF")
+		btn.BackgroundColor3 = state and Color3.fromRGB(60, 0, 90) or Color3.fromRGB(40, 40, 40)
+		callback(state)
+	end)
+	return btn
+end
+
+-- Função para criar Sliders (simples)
+local function createSlider(name, parent, min, max, default, callback)
+	local label = Instance.new("TextLabel", parent)
+	label.Size = UDim2.new(1, -20, 0, 20)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(200, 200, 200)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.Text = name .. ": " .. tostring(default)
+
+	local box = Instance.new("TextBox", parent)
+	box.Size = UDim2.new(1, -20, 0, 30)
+	box.Text = tostring(default)
+	box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.Font = Enum.Font.Gotham
+	box.TextSize = 14
+
+	box.FocusLost:Connect(function()
+		local num = tonumber(box.Text)
+		if num then
+			num = math.clamp(num, min, max)
+			box.Text = tostring(num)
+			label.Text = name .. ": " .. tostring(num)
+			callback(num)
+		end
+	end)
+
+	return label, box
+end
+
+-- Container
+local UIList = Instance.new("UIListLayout", MainFrame)
+UIList.Padding = UDim.new(0, 6)
+UIList.FillDirection = Enum.FillDirection.Vertical
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- 🧠 Cheats ativáveis
+local ESP_ENABLED = false
+local SILENTAIM_ENABLED = false
+local SPEED_ENABLED = false
+local NOCD_ENABLED = false
+local AUTOKILL_ENABLED = false
+
+local speedValue = 50
+local aimDistance = 100
+local killDistance = 10
+local cdTime = 0
+
+-- Botões/Toggles
+createToggle("ESP", MainFrame, false, function(state)
+	ESP_ENABLED = state
+end)
+
+createToggle("Silent Aim", MainFrame, false, function(state)
+	SILENTAIM_ENABLED = state
+end)
+
+createToggle("Speed Hack", MainFrame, false, function(state)
+	SPEED_ENABLED = state
+end)
+
+createToggle("No Cooldown", MainFrame, false, function(state)
+	NOCD_ENABLED = state
+end)
+
+createToggle("Auto Kill", MainFrame, false, function(state)
+	AUTOKILL_ENABLED = state
+end)
+
+-- Sliders
+createSlider("Speed Value", MainFrame, 16, 200, 50, function(val)
+	speedValue = val
+end)
+
+createSlider("Aim Distance", MainFrame, 10, 300, 100, function(val)
+	aimDistance = val
+end)
+
+createSlider("Kill Distance", MainFrame, 1, 50, 10, function(val)
+	killDistance = val
+end)
+
+createSlider("Cooldown Time", MainFrame, 0, 5, 0, function(val)
+	cdTime = val
+end)
+
+-- LOOP PRINCIPAL
+RunService.RenderStepped:Connect(function()
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local root = plr.Character:FindFirstChild("HumanoidRootPart")
+
+			-- ESP
+			if ESP_ENABLED then
+				if not root:FindFirstChild("ESPHighlight") then
+					local hl = Instance.new("Highlight", root)
+					hl.Name = "ESPHighlight"
+					hl.FillColor = Color3.fromRGB(255, 0, 0)
+					hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+				end
+			else
+				if root:FindFirstChild("ESPHighlight") then
+					root.ESPHighlight:Destroy()
+				end
+			end
+
+			-- Silent Aim e AutoKill
+			local dist = (root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+			if SILENTAIM_ENABLED and dist <= aimDistance then
+				-- Aqui você pode alterar o CFrame da arma pra mirar nesse jogador
+				-- (simulação)
+			end
+
+			if AUTOKILL_ENABLED and dist <= killDistance then
+				if plr.Character:FindFirstChild("Humanoid") then
+					plr.Character.Humanoid.Health = 0
+				end
+			end
+		end
+	end
+
+	-- Speed Hack
+	if SPEED_ENABLED then
+		if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+			LocalPlayer.Character.Humanoid.WalkSpeed = speedValue
+		end
+	end
+
+	-- No Cooldown (simulação)
+	if NOCD_ENABLED then
+		-- Aqui você resetaria as variáveis de cooldown do jogo (se souber onde estão)
+	end
+end)
